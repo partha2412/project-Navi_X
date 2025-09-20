@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navi X - Authority Bus Tracking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .welcome-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .authority-dashboard {
+            background: #1f2937;
+            color: white;
+            min-height: 100vh;
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+
+        .dashboard-container {
+            width: 100%;
+            height: 100vh;
+            background: #1f2937;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Welcome Screen -->
+    <div id="welcome-screen" class="welcome-container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">🚌 Navi X</h1>
+        <h2 class="text-xl text-gray-600 mb-4">Authority Bus Tracking</h2>
+        <p class="text-gray-600 mb-8">Monitor and manage buses in real-time.</p>
+
+        <div class="flex flex-col gap-4 mb-6">
+            <button id="authority-login-btn"
+                class="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold shadow-lg">🔑
+                Authority Login</button>
+            <button id="authority-register-btn"
+                class="bg-red-500 hover:bg-red-600 text-white py-3 px-6 rounded-lg font-semibold shadow-lg">👮 Authority
+                Register</button>
+        </div>
+    </div>
+
+    <!-- Authority Login Section -->
+    <div id="authority-login-section" class="welcome-container" style="display: none;">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">🔑 Authority Login</h2>
+        <form id="authority-login-form" class="flex flex-col gap-4">
+            <input type="text" id="login-username-email" placeholder="Username or Official Email"
+                class="p-3 border rounded-lg" required>
+            <input type="password" id="login-password" placeholder="Password" class="p-3 border rounded-lg" required>
+            <button type="submit"
+                class="bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold shadow-lg">🚀
+                Login</button>
+        </form>
+        <button id="back-to-welcome-login" class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg mt-4">←
+            Back to Home</button>
+    </div>
+
+    <!-- Authority Registration Section -->
+    <div id="authority-register-section" class="welcome-container" style="display: none;">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">👮 Authority Registration</h2>
+        <form id="authority-form" class="flex flex-col gap-4" enctype="multipart/form-data">
+            <input type="text" id="auth-username" placeholder="Authority Username" class="p-3 border rounded-lg"
+                required>
+            <input type="email" id="auth-email" placeholder="Official Email" class="p-3 border rounded-lg" required>
+            <input type="text" id="auth-department" placeholder="Department/Organization" class="p-3 border rounded-lg"
+                required>
+            <input type="password" id="auth-password" placeholder="Create Password" class="p-3 border rounded-lg"
+                required>
+            <label for="auth-file">Upload Authority License/ID:</label>
+            <input type="file" id="auth-file" accept=".pdf,.jpg,.jpeg,.png" class="p-3 border rounded-lg" required>
+            <button type="submit"
+                class="bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded-lg font-semibold shadow-lg">🔐 Register
+                Authority</button>
+        </form>
+        <button id="back-to-welcome-register"
+            class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg mt-4">← Back to Home</button>
+    </div>
+
+    <!-- Authority Dashboard -->
+    <div id="authority-dashboard" class="authority-dashboard" style="display: none;">
+        <div class="dashboard-container">
+            <header class="bg-gray-800 p-4 flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <h1 class="text-2xl font-bold">🚌 Navi X Dashboard</h1>
+                    <div class="bg-green-600 px-3 py-1 rounded-full text-sm" id="auth-status">✓ Authority Verified</div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="welcome-authority" class="text-gray-300"></span>
+                    <button id="logout-btn"
+                        class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-sm">Logout</button>
+                </div>
+            </header>
+
+            <section id="statsSection" class="flex justify-center gap-6 p-4 bg-gray-800">
+                <div class="bg-green-600 px-6 py-3 rounded-lg text-center">
+                    <h3>On Time</h3>
+                    <p id="onTimeCount" class="text-2xl">0</p>
+                </div>
+                <div class="bg-yellow-600 px-6 py-3 rounded-lg text-center">
+                    <h3>Delayed</h3>
+                    <p id="delayedCount" class="text-2xl">0</p>
+                </div>
+                <div class="bg-blue-600 px-6 py-3 rounded-lg text-center">
+                    <h3>Total Buses</h3>
+                    <p id="totalBuses" class="text-2xl">0</p>
+                </div>
+                <div class="bg-purple-600 px-6 py-3 rounded-lg text-center">
+                    <h3>Last Update</h3>
+                    <p id="lastUpdate">--</p>
+                </div>
+            </section>
+
+            <section class="p-4 bg-gray-700 flex gap-4 justify-center">
+                <button id="refreshBuses" class="bg-blue-500 px-4 py-2 rounded-lg">🔄 Refresh</button>
+                <button id="addBus" class="bg-green-500 px-4 py-2 rounded-lg">➕ Add Bus</button>
+                <button id="generateReport" class="bg-yellow-500 px-4 py-2 rounded-lg">📊 Report</button>
+                <button id="emergencyAlert" class="bg-red-500 px-4 py-2 rounded-lg">🚨 Emergency</button>
+            </section>
+
+            <main>
+                <div id="bus-map" class="w-full h-[calc(100vh-240px)]"></div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:5000/api";
+        let accessToken = null;
+        let authorityData = {};
+        let map, buses = [], busMarkers = {}, autoRefreshInterval;
+
+        function showSection(section) {
+            document.querySelectorAll("#welcome-screen,#authority-login-section,#authority-register-section,#authority-dashboard").forEach(s => s.style.display = "none");
+            section.style.display = "block";
+        }
+
+        // Navigation
+        document.getElementById('authority-login-btn').onclick = () => showSection(document.getElementById('authority-login-section'));
+        document.getElementById('authority-register-btn').onclick = () => showSection(document.getElementById('authority-register-section'));
+        document.getElementById('back-to-welcome-login').onclick = () => showSection(document.getElementById('welcome-screen'));
+        document.getElementById('back-to-welcome-register').onclick = () => showSection(document.getElementById('welcome-screen'));
+
+        // Register Authority
+        document.getElementById('authority-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const form = new FormData();
+            form.append("username", document.getElementById('auth-username').value);
+            form.append("email", document.getElementById('auth-email').value);
+            form.append("department", document.getElementById('auth-department').value);
+            form.append("password", document.getElementById('auth-password').value);
+            form.append("file", document.getElementById('auth-file').files[0]);
+
+            const res = await fetch(`${API_BASE}/register`, { method: "POST", body: form });
+            const data = await res.json();
+            if (res.ok) { alert("✅ Registered! Now login."); showSection(document.getElementById('authority-login-section')); }
+            else alert("❌ " + data.msg);
+        });
+
+        // Login
+        document.getElementById('authority-login-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const res = await fetch(`${API_BASE}/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    identifier: document.getElementById('login-username-email').value,
+                    password: document.getElementById('login-password').value
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                accessToken = data.access_token;
+                authorityData = data.authority;
+                document.getElementById("welcome-authority").textContent = `Welcome, ${authorityData.username}`;
+                showSection(document.getElementById('authority-dashboard'));
+                initializeMap();
+            } else alert("❌ " + data.msg);
+        });
+
+        // Map & Buses
+        async function initializeMap() {
+            if (map) map.remove();
+            map = L.map("bus-map").setView([22.5726, 88.3639], 13);
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+            await loadBuses();
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            autoRefreshInterval = setInterval(loadBuses, 30000);
+        }
+
+        async function loadBuses() {
+            const res = await fetch(`${API_BASE}/buses`);
+            buses = await res.json();
+            renderBuses();
+        }
+
+        function renderBuses() {
+            Object.values(busMarkers).forEach(m => map.removeLayer(m));
+            busMarkers = {};
+            let onTime = 0, delayed = 0;
+            buses.forEach(bus => {
+                if (bus.status === "On Time") onTime++; else delayed++;
+                const icon = L.divIcon({ html: `<div style="background:${bus.status === 'On Time' ? '#10b981' : '#f59e0b'};width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;">🚌</div>`, iconSize: [24, 24] });
+                const marker = L.marker([bus.lat, bus.lng], { icon }).addTo(map).bindPopup(`<b>${bus.name}</b><br>${bus.route}<br>Status:${bus.status}`);
+                busMarkers[bus.id] = marker;
+            });
+            document.getElementById("onTimeCount").textContent = onTime;
+            document.getElementById("delayedCount").textContent = delayed;
+            document.getElementById("totalBuses").textContent = buses.length;
+            document.getElementById("lastUpdate").textContent = new Date().toLocaleTimeString();
+        }
+
+        // Buttons
+        document.getElementById("refreshBuses").onclick = loadBuses;
+        document.getElementById("addBus").onclick = async () => {
+            const name = prompt("Bus name?"); const route = prompt("Route?");
+            if (!name || !route) return;
+            const res = await fetch(`${API_BASE}/buses`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": "Bearer " + accessToken },
+                body: JSON.stringify({ name, route, lat: 22.5726, lng: 88.3639 })
+            });
+            const data = await res.json();
+            if (res.ok) { alert("✅ Bus added"); loadBuses(); } else alert("❌ " + data.msg);
+        };
+        document.getElementById("generateReport").onclick = async () => {
+            const res = await fetch(`${API_BASE}/report`, { headers: { "Authorization": "Bearer " + accessToken } });
+            const data = await res.json();
+            if (res.ok) alert("📊 Report:\n\n" + data.report.join("\n")); else alert("❌ " + data.msg);
+        };
+        document.getElementById("emergencyAlert").onclick = async () => {
+            if (!confirm("🚨 Emergency stop all buses?")) return;
+            const res = await fetch(`${API_BASE}/emergency`, { method: "POST", headers: { "Authorization": "Bearer " + accessToken } });
+            const data = await res.json();
+            if (res.ok) { alert("🚨 Emergency applied to " + data.affected + " buses"); loadBuses(); } else alert("❌ " + data.msg);
+        };
+        document.getElementById("logout-btn").onclick = () => { accessToken = null; showSection(document.getElementById("welcome-screen")); };
+    </script>
+</body>
+
+</html>
